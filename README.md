@@ -8,6 +8,30 @@ It is not an architecture, a framework, or a claim of novelty. We had a specific
 
 The name records the circumstances of its birth. We don't need to keep repeating the joke.
 
+## How a model should use FUUTP
+
+**FUUTP is an external transport tool, not something to embed in the artifact being transported.**
+
+A lab does not need to import FUUTP, contain FUUTP code, carry a deployment manifest, know its destination repository, or change its own architecture to become publishable. The accepted artifact should remain an ordinary sovereign artifact.
+
+When a model needs to transfer one:
+
+```text
+accepted artifact
+→ invoke FUUTP from outside the artifact
+→ recover the complete payload through the available file/tool seam
+→ write it to the requested repository/path
+→ fetch and verify the result
+→ record newly learned transport evidence in FUUTP
+→ leave the artifact alone
+```
+
+Think of FUUTP as a model-operated workshop tool. Point it at an artifact when transport is needed; do not install it into every project that might someday be transported.
+
+This boundary is intentional. If ChatGPT's Files/GitHub capabilities, payload limits, or useful transport routes change, FUUTP should change in one place. Existing labs should not need publication-layer migrations.
+
+**Transport is FUUTP's problem. The artifact's job is to be the artifact.**
+
 ## Why this repo exists
 
 World Lab began as a large self-contained artifact containing many laboratories. Publishing it exposed an awkward boundary: ChatGPT could possess and inspect the artifact, and the GitHub connector could construct Git objects, but there was no obvious direct conversation-file → Git-blob operation.
