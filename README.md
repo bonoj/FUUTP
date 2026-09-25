@@ -89,3 +89,53 @@ If it fails, the failure becomes evidence and FUUTP earns its next piece of mach
 FUUTP does not need to become a package manager, deployment platform, artifact format, World Lab runtime, universal Git abstraction, or respectable piece of enterprise middleware.
 
 It just needs to get the artifact through the seam without making the artifact become something else.
+
+
+## T0 result — PASS
+
+Foundry crossed the seam successfully.
+
+Observed route:
+
+```text
+Files read: foundry_standalone.html
+→ three contiguous text windows (lines 1–1000, 1001–2000, 2001–2765)
+→ concatenate in-order inside one tool-orchestration call
+→ GitHub contents write to bonoj/Foundry/main/index.html
+→ fetch published index.html
+→ compare complete source and published strings
+```
+
+Observed payload:
+
+- 2,765 source lines
+- 235,343 JavaScript string characters
+- source and fetched GitHub content had identical character counts
+- complete source/published string comparison returned true
+- an independent FNV-style comparison over the JavaScript strings also matched: `48962312`
+- published Git blob SHA: `6a0fe9c04fae292bd86e25fd3231749fe42c63e1`
+- publication commit: `63db4f21d99293d3f1f994994009089f46ffe7ab`
+
+### What T0 actually proved
+
+For this UTF-8 HTML specimen, FUUTP can bridge a conversation file to GitHub without emitting the artifact through model-visible output. Files can return bounded contiguous text windows inside a tool-orchestration call; those windows can be concatenated there and supplied directly to the GitHub write operation.
+
+The complete UTF-8 text recovered from GitHub was identical to the complete UTF-8 text recovered from Files.
+
+This is **text-faithful transport evidence**. It is not yet a general byte-faithful claim: the experiment did not independently hash the original uploaded byte stream before Files decoded it as text. Binary artifacts, encoding edge cases, larger payloads, and connector/tool-call limits remain unproven.
+
+### Useful discovery
+
+The T0 route did not need the lower-level Git-object sequence. GitHub's contents write was sufficient to initialize the empty Foundry repository and create `main/index.html`.
+
+That makes the smallest currently proven FUUTP path:
+
+```text
+Files bounded reads
+→ in-call concatenation
+→ GitHub create_file
+→ GitHub fetch_file
+→ full-text equality check
+```
+
+Keep the Git-object route as an earned historical fallback, not mandatory ceremony.
