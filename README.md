@@ -65,6 +65,73 @@ Think of FUUTP as a model-operated workshop tool. Transport limitations belong h
 
 **Transport is FUUTP's problem. The artifact's job is to be the artifact.**
 
+## T2 result — operational GitHub → sandbox PASS
+
+Vertical Accretion closed the execution-locality seam.
+
+Source specimen:
+
+- `bonoj/VerticalAccretion/main/index.html`
+- source Git blob SHA: `3940ced8e70fe198ee08f99a63848cb31fe2e04d`
+- recovered UTF-8 bytes: 2,969,582
+
+Proven route:
+
+```text
+GitHub path
+→ resolve source blob SHA
+→ Git-data blob fetch
+→ exact UTF-8 string in tool orchestration
+→ UTF-8 encode
+→ split bytes into conservative transport chunks
+→ base64 each chunk
+→ temporary native Google Docs
+→ export each Doc as text/plain
+→ exported connector file references auto-materialize into /mnt/data
+→ locally remove transport whitespace/BOM
+→ base64 decode each chunk
+→ concatenate bytes in order
+→ write executable artifact
+→ calculate local Git blob SHA
+→ require exact equality with source blob SHA
+→ delete temporary Drive carriers
+```
+
+Observed result:
+
+```text
+local reconstructed Git blob SHA
+3940ced8e70fe198ee08f99a63848cb31fe2e04d
+
+source Git blob SHA
+3940ced8e70fe198ee08f99a63848cb31fe2e04d
+
+IDENTICAL = true
+```
+
+### Important failed carrier
+
+Do **not** carry raw HTML through a native Google Doc. The export introduced transformations beyond BOM/line-ending changes and failed Git-object identity.
+
+Base64 is the proven carrier because its alphabet survives the Docs text-export seam. The Docs are disposable transport envelopes, not artifact storage or semantic documents.
+
+### Operational instruction
+
+When direct GitHub/raw download into the execution sandbox is unavailable but Google Drive connector export can produce runtime file references, use the T2 base64 chunk bridge automatically. Do not ask the human to shuttle the artifact.
+
+Chunk sizing is an implementation detail; keep chunks comfortably below Google Docs/document-edit and tool-call limits. Multiple orchestration calls are acceptable. Always verify the final reconstructed bytes against the source Git blob SHA before treating the local artifact as authoritative.
+
+Temporary Drive carriers must be clearly named disposable and deleted after successful reconstruction.
+
+This makes FUUTP operationally bidirectional for the demonstrated UTF-8 artifact class:
+
+```text
+working file → GitHub
+GitHub → working file
+```
+
+Both directions have exact-fidelity evidence.
+
 ## Why this repo exists
 
 World Lab began as a large self-contained artifact containing many laboratories. Publishing it exposed an awkward boundary: ChatGPT could possess and inspect the artifact, and the GitHub connector could construct Git objects, but there was no obvious direct conversation-file → Git-blob operation.
