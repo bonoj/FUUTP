@@ -163,3 +163,83 @@ Files bounded reads
 ```
 
 Keep the Git-object route as an earned historical fallback, not mandatory ceremony.
+
+
+## T1 experiment — inverse transport from GitHub
+
+Vertical Accretion exposed the inverse seam: a model could inspect repository metadata but initially could not recover its accepted ~3 MB executable through the obvious repository-file readers.
+
+Specimen:
+
+- repository: `bonoj/VerticalAccretion`
+- path: `main/index.html`
+- Git blob SHA: `3940ced8e70fe198ee08f99a63848cb31fe2e04d`
+
+### T1 result — PARTIAL PASS
+
+The obvious routes failed:
+
+```text
+GitHub fetch_file(index.html)
+→ blob identity returned
+→ content empty
+
+GitHub fetch_file(index.html, bounded line range)
+→ blob identity returned
+→ content empty
+
+GitHub raw.githubusercontent.com fetch
+→ rejected as too large or unsupported
+```
+
+The Git-data route succeeded:
+
+```text
+known repository path
+→ fetch_file to obtain blob SHA
+→ GitHub Git blob endpoint: /repos/{owner}/{repo}/git/blobs/{sha}
+→ complete UTF-8 text recovered inside one tool-orchestration call
+```
+
+Observed payload:
+
+- 2,969,176 JavaScript string characters
+- starts with `<!doctype html>`
+- ends with `</body></html>`
+- FNV-1a 32-bit over the recovered JavaScript string: `1239264b`
+
+This establishes a useful inverse acquisition route for a large UTF-8 Git blob even when the higher-level file readers refuse or truncate the payload.
+
+### What T1 does and does not prove
+
+T1 proves **GitHub → model/tool orchestration memory** for this ~3 MB UTF-8 blob.
+
+It does **not yet prove GitHub → Files/container**. The current Files surface can materialize an existing file reference, but the available GitHub Git-blob fetch returns text rather than a reusable connector file reference, and the Files surface exposed here has no primitive for creating a file directly from an in-call string. The execution container also has no outbound network access.
+
+Therefore FUUTP is now logically bidirectional at the payload-acquisition layer, but not yet operationally bidirectional into the local execution container.
+
+The smallest missing primitive is one of:
+
+```text
+GitHub blob → reusable connector file reference
+```
+
+or
+
+```text
+tool-orchestration string → Files/container file
+```
+
+Either would close the seam without modifying transported repositories or emitting megabytes through model-visible text.
+
+### Current inverse route
+
+When a large UTF-8 repository file is needed:
+
+1. Resolve its Git blob SHA with the normal repository metadata/file operation.
+2. Fetch `/repos/{owner}/{repo}/git/blobs/{sha}` through the GitHub connector.
+3. Verify character count and an in-call checksum when useful.
+4. If the next operation can consume the recovered string directly, continue without surfacing it through model output.
+5. If a true local/container file is required, report the remaining file-reference seam precisely rather than asking the human to shuttle the artifact or redesigning the source repository.
+
+Do not install transport workflows into specimen repositories merely to compensate for this seam. Transport remains FUUTP's problem.
