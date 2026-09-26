@@ -8,6 +8,51 @@ It is not an architecture, a framework, or a claim of novelty. We had a specific
 
 The name records the circumstances of its birth. We don't need to keep repeating the joke.
 
+## FUUTP invocation contract
+
+**The word `FUUTP` is enough to invoke this transport protocol when the surrounding task identifies a repository/artifact direction.**
+
+A model encountering “use FUUTP”, “fetch it with FUUTP”, “push it through FUUTP”, “hop over to FUUTP”, or equivalent should:
+
+1. Read this README from `bonoj/FUUTP` at its current default branch before inventing a transport workflow.
+2. Infer direction from the task:
+   - repository → working runtime = **pull**
+   - working/conversation artifact → repository = **push**
+3. Execute the proven route autonomously. Do not make the human manually shuttle files merely because the obvious high-level connector operation fails.
+4. Preserve artifact bytes/UTF-8 exactly. Transport is not permission to parse/reserialize, minify, reconstruct, refactor, or otherwise modify the artifact.
+5. Verify the destination against the source before declaring success.
+6. Treat publication/promotion authority separately from transport authority. FUUTP may move a candidate without making it canonical.
+7. Clean up disposable transport carriers after a successful transfer.
+8. If the currently documented route genuinely cannot run because a required tool is unavailable, diagnose the exact missing primitive. Do not silently substitute a lossy route.
+
+For the currently proven large UTF-8 GitHub → sandbox case, **T2 below is the default fallback, not an experiment to rediscover**:
+
+```text
+GitHub metadata/path
+→ source Git blob SHA
+→ Git-data blob fetch
+→ exact UTF-8 payload in orchestration memory
+→ UTF-8 bytes
+→ conservative byte chunks
+→ base64 each chunk
+→ disposable Google Docs as carrier envelopes
+→ text/plain export creates runtime file references
+→ sandbox materialization
+→ strip carrier BOM/whitespace from base64 only
+→ base64 decode
+→ concatenate original bytes
+→ write working artifact
+→ compute Git blob SHA locally
+→ require equality with source SHA
+→ delete carrier Docs
+```
+
+**Why base64:** native Google Docs are not byte-transparent text carriers. Raw HTML transported through Docs failed identity because export transformed the text. Base64 restricts the carrier to a representation that survived the demonstrated Docs/export seam. Never “normalize” the decoded artifact itself.
+
+**Known acceptance specimen:** `bonoj/VerticalAccretion/main/index.html` reconstructed locally with Git blob SHA `3940ced8e70fe198ee08f99a63848cb31fe2e04d`, exactly matching its source blob.
+
+If a future platform exposes a simpler exact-fidelity connector-memory → runtime-file primitive, prefer it after verifying identity and record the new evidence here. FUUTP is a transport protocol, not loyalty to a particular workaround.
+
 ## How a model should use FUUTP
 
 **FUUTP is an external, bidirectional transport tool. Do not embed it in the artifact being transported.**
