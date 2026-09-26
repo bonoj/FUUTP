@@ -10,25 +10,58 @@ The name records the circumstances of its birth. We don't need to keep repeating
 
 ## How a model should use FUUTP
 
-**FUUTP is an external transport tool, not something to embed in the artifact being transported.**
+**FUUTP is an external, bidirectional transport tool. Do not embed it in the artifact being transported.**
 
-A lab does not need to import FUUTP, contain FUUTP code, carry a deployment manifest, know its destination repository, or change its own architecture to become publishable. The accepted artifact should remain an ordinary sovereign artifact.
+When the user says to use, invoke, or "hop over to" FUUTP, treat this repository as operational instructions. Do not ask the user to manually upload/download/shuttle a repository artifact until the documented FUUTP routes have actually been attempted.
 
-When a model needs to transfer one:
+### Pull: GitHub → working artifact
+
+For a UTF-8 text artifact already in GitHub:
 
 ```text
-accepted artifact
-→ invoke FUUTP from outside the artifact
-→ recover the complete payload through the available file/tool seam
-→ write it to the requested repository/path
-→ fetch and verify the result
-→ record newly learned transport evidence in FUUTP
-→ leave the artifact alone
+repository + ref + path
+→ resolve Git blob SHA
+→ recover complete blob through GitHub Git-data API
+→ verify payload
+→ materialize/write recovered UTF-8 as the working file
+→ execute/inspect/edit locally as required
 ```
 
-Think of FUUTP as a model-operated workshop tool. Point it at an artifact when transport is needed; do not install it into every project that might someday be transported.
+Operational rules:
 
-This boundary is intentional. If ChatGPT's Files/GitHub capabilities, payload limits, or useful transport routes change, FUUTP should change in one place. Existing labs should not need publication-layer migrations.
+1. Try the ordinary repository file read when appropriate.
+2. If a large file returns metadata/identity but empty, truncated, or rejected content, **do not stop and do not ask the human to shuttle it**.
+3. Resolve the blob SHA and fetch the Git object through:
+   `/repos/{owner}/{repo}/git/blobs/{sha}`.
+4. Treat the returned blob content as the artifact payload. For UTF-8 HTML, the recovered string itself is the executable source; writing those characters as UTF-8 produces the working HTML artifact. A separate connector file reference is not conceptually required.
+5. Verify fidelity. Strongest demonstrated check: recreate a Git blob from the recovered UTF-8 and require the resulting SHA to equal the source blob SHA.
+6. Keep repository canonical state untouched unless the user separately authorizes publication/promotion.
+
+Do not confuse **payload acquisition** with **execution locality**. If one tool call recovers the complete string and another execution surface must receive it, bridge the payload directly using whatever code/file-writing surface is available in that runtime. Do not invent a requirement for Actions, releases, file-reference adapters, artifact splitting, reconstruction, minification, or human download/upload merely because a high-level file reader failed.
+
+### Push: working artifact → GitHub
+
+```text
+verified working artifact
+→ recover complete payload through available Files/tool seam
+→ GitHub contents write when sufficient
+   OR create_blob → create_tree → create_commit → update_ref
+→ fetch/verify published result
+```
+
+Preserve the accepted artifact rather than redesigning it for transport. Prefer the smallest route demonstrated to work for the payload.
+
+### Invocation finish line
+
+A successful FUUTP invocation should make this user workflow sufficient:
+
+```text
+"Work from <repository URL>. Use FUUTP."
+```
+
+The model should then recover the repository artifact, work from it, and return or publish the resulting artifact according to the user's authority—without requiring the human to manually carry the artifact across the seam.
+
+Think of FUUTP as a model-operated workshop tool. Transport limitations belong here, not in every sovereign lab.
 
 **Transport is FUUTP's problem. The artifact's job is to be the artifact.**
 
@@ -175,7 +208,7 @@ Specimen:
 - path: `main/index.html`
 - Git blob SHA: `3940ced8e70fe198ee08f99a63848cb31fe2e04d`
 
-### T1 result — PARTIAL PASS
+### T1 result — PAYLOAD PASS
 
 The obvious routes failed:
 
@@ -210,27 +243,11 @@ Observed payload:
 
 This establishes a useful inverse acquisition route for a large UTF-8 Git blob even when the higher-level file readers refuse or truncate the payload.
 
-### What T1 does and does not prove
+### What T1 proves
 
-T1 proves **GitHub → model/tool orchestration memory** for this ~3 MB UTF-8 blob.
+T1 proves **GitHub → complete model/tool-orchestration payload** for this ~3 MB UTF-8 blob. The recovered string was subsequently shown to recreate the identical Git object.
 
-It does **not yet prove GitHub → Files/container**. The current Files surface can materialize an existing file reference, but the available GitHub Git-blob fetch returns text rather than a reusable connector file reference, and the Files surface exposed here has no primitive for creating a file directly from an in-call string. The execution container also has no outbound network access.
-
-Therefore FUUTP is now logically bidirectional at the payload-acquisition layer, but not yet operationally bidirectional into the local execution container.
-
-The smallest missing primitive is one of:
-
-```text
-GitHub blob → reusable connector file reference
-```
-
-or
-
-```text
-tool-orchestration string → Files/container file
-```
-
-Either would close the seam without modifying transported repositories or emitting megabytes through model-visible text.
+For an HTML artifact, that complete UTF-8 payload is already the executable source. Do not mistake the absence of a connector-specific file reference for absence of the artifact. When execution requires a filesystem path, write/materialize the recovered UTF-8 through the available execution/file-writing surface.
 
 ### Current inverse route
 
@@ -240,7 +257,7 @@ When a large UTF-8 repository file is needed:
 2. Fetch `/repos/{owner}/{repo}/git/blobs/{sha}` through the GitHub connector.
 3. Verify character count and an in-call checksum when useful.
 4. If the next operation can consume the recovered string directly, continue without surfacing it through model output.
-5. If a true local/container file is required, report the remaining file-reference seam precisely rather than asking the human to shuttle the artifact or redesigning the source repository.
+5. If execution requires a local/container file, write the recovered UTF-8 as that file through the available execution surface. Do not ask the human to shuttle the artifact merely because the GitHub connector itself returned text rather than a file reference.
 
 Do not install transport workflows into specimen repositories merely to compensate for this seam. Transport remains FUUTP's problem.
 
@@ -256,4 +273,4 @@ That is exactly the source blob SHA from `bonoj/VerticalAccretion/main/index.htm
 
 For this UTF-8 specimen, inverse acquisition is therefore stronger than character-count or auxiliary-checksum evidence: the recovered string recreates the identical Git object. T1 acquisition is **text-faithful at Git-object identity**.
 
-The remaining unproven step is not payload fidelity. It is execution locality: the currently exposed tool surfaces do not provide a direct `string → file reference/container path` operation.
+The payload-fidelity question is closed for this specimen. Execution locality is an adapter concern: the recovered UTF-8 is the artifact, and a runtime that needs a path should write those exact characters to the working file. Do not elevate a missing connector-specific `file reference` into a transport requirement.
