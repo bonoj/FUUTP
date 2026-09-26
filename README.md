@@ -243,3 +243,17 @@ When a large UTF-8 repository file is needed:
 5. If a true local/container file is required, report the remaining file-reference seam precisely rather than asking the human to shuttle the artifact or redesigning the source repository.
 
 Do not install transport workflows into specimen repositories merely to compensate for this seam. Transport remains FUUTP's problem.
+
+### T1 fidelity upgrade — Git-object-identical PASS
+
+The recovered 2,969,176-character Vertical Accretion payload was supplied directly to GitHub `create_blob(content, encoding=utf-8)` in the FUUTP repository. GitHub returned:
+
+```text
+3940ced8e70fe198ee08f99a63848cb31fe2e04d
+```
+
+That is exactly the source blob SHA from `bonoj/VerticalAccretion/main/index.html`.
+
+For this UTF-8 specimen, inverse acquisition is therefore stronger than character-count or auxiliary-checksum evidence: the recovered string recreates the identical Git object. T1 acquisition is **text-faithful at Git-object identity**.
+
+The remaining unproven step is not payload fidelity. It is execution locality: the currently exposed tool surfaces do not provide a direct `string → file reference/container path` operation.
