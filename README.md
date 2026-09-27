@@ -277,6 +277,77 @@ If that succeeds, we document the observed envelope. We do **not** infer a unive
 
 If it fails, the failure becomes evidence and FUUTP earns its next piece of machinery.
 
+## Next experiment — large push without model-visible byte pressure
+
+The next FUUTP investigation should target the failure mode that actually hurt us: **the model stalls while transporting or accumulating a multi-megabyte artifact**, even when GitHub itself is capable of storing the object.
+
+A small World Lab Vestibule publication provided a useful but deliberately limited data point. A ~43 KB UTF-8 HTML artifact was moved through:
+
+```text
+container artifact
+→ Files/Library snapshot
+→ Files read
+→ complete text assembled inside tool orchestration
+→ GitHub contents update
+→ verify destination blob
+```
+
+That path completed cleanly and did not require emitting the artifact into conversational output. It does **not** prove that the same route remains operational at multi-megabyte scale. The final GitHub write still consumed the complete UTF-8 artifact as one `content` argument. At ~43 KB that is trivial; at ~3–7 MB it may reproduce the historical stall.
+
+### Question to answer
+
+Can a large accepted artifact travel from file-backed storage to a verified Git blob **without the model having to ingest, retain, or re-emit the bulk payload through its conversational working context, and without stalling before the write completes?**
+
+This is a transport/runtime question, not a Git size-limit question.
+
+### Proposed deterministic probe
+
+Use a disposable repository/path and inert UTF-8 specimens whose exact bytes are known. Exercise increasing payload sizes rather than beginning with a valuable accepted artifact:
+
+```text
+~1 MB
+→ ~4 MB
+→ ~8 MB
+```
+
+For each specimen:
+
+1. Begin with a real file-backed artifact, not text pasted into the conversation.
+2. Establish expected byte count and Git blob SHA before transport.
+3. Acquire/read the payload only inside tool orchestration or another non-conversational transport surface.
+4. If bounded reads are required, concatenate them inside that same execution/orchestration surface. Do not emit chunks to the model and do not accumulate them across conversational turns.
+5. Send the complete candidate to GitHub using the smallest available write primitive.
+6. Emit only compact status metadata back to the model: attempted size, success/failure, destination blob SHA, expected blob SHA, and where the operation stalled if it failed.
+7. Require destination blob SHA == expected blob SHA before calling the probe a pass.
+8. Delete disposable specimens/carriers after the experiment.
+
+### Success condition
+
+The useful threshold is not merely “GitHub accepted an 8 MB file.” The experiment passes only if the **entire operation completes without model stall and without bulk artifact bytes entering conversational output/context**, while preserving exact Git-object identity.
+
+If ~8 MB succeeds, record the demonstrated envelope here and use that direct file-backed/orchestrated route for large UTF-8 pushes until contrary evidence appears.
+
+### Failure diagnosis
+
+If a size step stalls or is rejected, record the narrowest observed seam:
+
+```text
+file-backed source
+→ Files/read limit?
+→ in-call concatenation/runtime memory limit?
+→ tool argument serialization limit?
+→ GitHub connector wrapper limit?
+→ GitHub API limit?
+```
+
+Do not summarize every large-payload failure as “GitHub cannot take the file.” Identify the component that actually failed.
+
+If the direct route fails, the next experiment should seek a true **file/reference/stream → Git blob** primitive where the GitHub side consumes a file handle or connector-local reference rather than a model-constructed content string. If no such primitive exists, return to FUUTP's verified carrier strategy and solve the remaining carrier → exact blob assembly seam without making the human shuttle bytes.
+
+### Preserve the artifact
+
+Do not use this experiment as permission to split application architecture, minify, parse/reserialize, reconstruct, or otherwise mutate an accepted artifact. Chunking is allowed only as disposable transport representation, with exact final Git blob identity as the gate.
+
 ## Non-goals
 
 FUUTP does not need to become a package manager, deployment platform, artifact format, World Lab runtime, universal Git abstraction, or respectable piece of enterprise middleware.
