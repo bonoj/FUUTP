@@ -88,13 +88,23 @@ Do not confuse **payload acquisition** with **execution locality**. If one tool 
 
 ```text
 verified working artifact
-→ recover complete payload through available Files/tool seam
-→ GitHub contents write when sufficient
-   OR create_blob → create_tree → create_commit → update_ref
-→ fetch/verify published result
+→ acquire exact payload
+→ establish expected Git blob identity
+→ create the final Git blob directly when possible
+   OR stage conservative Git-resident carriers when the seam requires them
+→ require final blob SHA == expected blob SHA
+→ promote that existing blob with create_tree → create_commit → update_ref
+→ verify target path resolves to the expected blob SHA
+→ remove disposable carriers during promotion when practical
 ```
 
 Preserve the accepted artifact rather than redesigning it for transport. Prefer the smallest route demonstrated to work for the payload.
+
+**Critical invariant: once the verified final Git blob exists, artifact bytes are finished moving.** Publication, rename, relocation, rollback, and reuse are Git tree operations from that point onward. Never re-upload, re-encode, or reassemble an artifact merely to put an already-existing blob at a repository path.
+
+If a large push must use Git-resident carrier chunks because the direct payload → `create_blob` seam cannot accept the artifact in one call, those carriers are transport state, not application state. Assemble them into the final blob through the smallest available exact-fidelity operation, verify the resulting blob identity, then promote that blob directly.
+
+**Do not install or depend on repository-local GitHub Actions merely to promote FUUTP carriers.** A specimen repository should not need CI machinery to finish transport. If the bytes are already in Git, solve the remaining problem with Git objects.
 
 ### Invocation finish line
 
@@ -206,6 +216,15 @@ That distinction matters. A successful Git write does not prove that arbitrary c
 
 ## Working principles
 
+**Transport once; promote by identity.**  
+Once FUUTP has produced and verified the destination Git blob, the payload phase is complete. Subsequent publication is tree surgery: point the requested path at that blob, commit the tree, and move the authorized ref.
+
+**Carriers are disposable transport state.**  
+A `.fuutp/` directory may temporarily hold conservative chunks when a tool seam cannot accept the complete payload. The presence of carriers means the bytes have crossed the expensive seam; do not restage them. Assemble, verify, promote, and clean them up.
+
+**No specimen-local CI requirement.**  
+GitHub Actions may be useful evidence in some unrelated workflow, but FUUTP must not require a target artifact repository to execute a temporary workflow simply to publish bytes already present in Git. The Six Cities attempt demonstrated that this adds an unnecessary asynchronous trigger/permissions/registration seam after transport has already succeeded.
+
 **Move the artifact; don't redesign it for the pipe.**  
 A verified standalone artifact should not be reconstructed, parsed/reserialized, minified, refactored, split, or otherwise changed merely to facilitate transport.
 
@@ -227,11 +246,16 @@ Given a verified standalone artifact and a target GitHub repository:
 
 1. Acquire the complete artifact payload through the smallest available seam.
 2. Preserve the accepted artifact rather than rebuilding it.
-3. Write the payload to the requested repository/path.
-4. Use the simplest GitHub path that works. Git objects are available when useful:
-   `create_blob → create_tree → create_commit → update_ref`.
-5. Fetch or otherwise verify the published result when possible.
-6. Record any newly demonstrated capability, limit, or failure here.
+3. Establish the expected Git blob SHA whenever exact identity is available.
+4. Create the final blob directly when possible. If the seam requires `.fuutp/` carriers, stage them once and treat them as already-transported bytes.
+5. Assemble carriers into one candidate blob without changing artifact bytes.
+6. **Require candidate blob SHA == expected blob SHA before promotion.**
+7. Promote by Git metadata: `existing blob SHA → create_tree → create_commit → update_ref`.
+8. Verify the requested target path resolves to the expected blob SHA.
+9. Remove disposable carriers and obsolete transport machinery during the promotion commit when practical.
+10. Record newly demonstrated capability, limit, or failure here.
+
+If step 5 cannot be executed with the currently available primitives, stop at that exact missing primitive. Do not restart transport, ask the human to shuttle the artifact, or add repository-local CI as an implicit substitute.
 
 FUUTP may accumulate multiple routes. They do not need to pretend to be one universal protocol.
 
@@ -386,3 +410,36 @@ That is exactly the source blob SHA from `bonoj/VerticalAccretion/main/index.htm
 For this UTF-8 specimen, inverse acquisition is therefore stronger than character-count or auxiliary-checksum evidence: the recovered string recreates the identical Git object. T1 acquisition is **text-faithful at Git-object identity**.
 
 The payload-fidelity question is closed for this specimen. Execution locality is an adapter concern: the recovered UTF-8 is the artifact, and a runtime that needs a path should write those exact characters to the working file. Do not elevate a missing connector-specific `file reference` into a transport requirement.
+
+
+## T3 evidence — Six Cities carrier promotion correction
+
+Six Cities exposed a distinction FUUTP previously left too implicit.
+
+The approximately 6 MB standalone artifact crossed the difficult seam successfully as eight Git-resident carrier chunks under `.fuutp/`. The intended complete artifact identity was recorded as:
+
+```text
+2fc171f82f0726372d61c9f7d8994779a117a8d5
+```
+
+A temporary GitHub Actions workflow was then added to concatenate the carriers, verify that SHA, commit `index.html`, and remove the carriers. Changing the workflow trigger and opening an issue still did not produce the publication commit.
+
+That failure does **not** mean transport failed. The expensive fact was already true: the artifact bytes were present in Git.
+
+The corrected interpretation is:
+
+```text
+working artifact
+→ .fuutp carriers in Git                 TRANSPORT SUCCEEDED
+→ exact assembly
+→ expected final blob SHA                IDENTITY GATE
+→ tree points index.html at final blob   PROMOTION
+→ commit + ref update
+→ carriers removed                       CLEANUP
+```
+
+The repository-local Actions step was an unnecessary second control plane between transport and promotion. It is now a rejected default route.
+
+**Acceptance test for the corrected protocol:** return to `bonoj/SixCities` without restaging the artifact, consume the already-present `.fuutp/part-*` carriers, produce the expected blob `2fc171f82f0726372d61c9f7d8994779a117a8d5`, promote it to `main/index.html`, verify the target blob identity, and clean up transport-only state.
+
+Until that acceptance test passes, carrier → blob assembly through the available model/GitHub tool seam remains the one unproven primitive. FUUTP should say so rather than disguising it behind CI.
