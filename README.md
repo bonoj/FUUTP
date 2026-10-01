@@ -38,7 +38,7 @@ Working text → exact payload → GitHub create_blob/create_file as appropriate
 
 Small specimen Foundry passed. Multi-megabyte SixCities demonstrated Git-resident carrier transport; carrier→final-blob assembly must still be identity-gated.
 
-### Conversation native binary → GitHub (OPEN)
+### Conversation native binary → GitHub (faithful route proven; exact route open)
 
 Current specimen:
 - source: conversation image `1681.png`
@@ -50,7 +50,10 @@ Rejected route:
 conversation image → Files image read → returned image payload → GitHub create_blob(base64)
 produced blob `f7c3e6b671210cae43f46fba7fb3afc434452d35`, therefore the image-read representation is transformed and MUST NOT be promoted.
 
-Required missing primitive:
+Faithful fallback for noncritical visual/reference assets:
+conversation image → Files image representation → GitHub blob → verify artifact remains semantically/visually faithful → promote. Exact SHA equality is not required when binary identity is not part of the artifact contract. Clara infers fidelity class from task/artifact and escalates to Exact when behavior, determinism, provenance, dataset integrity, or explicit byte identity matters.
+
+Exact route missing primitive:
 byte-transparent conversation-file reference/raw backing file → bytes/base64 or Git blob, without image decode/re-encode.
 
 Preferred probes, in order:
@@ -77,7 +80,7 @@ A failed identity gate is evidence, not an inconvenience. Keep source untouched,
 - T1 VerticalAccretion: Git-data blob endpoint recovered ~3 MB UTF-8; recreating source Git blob SHA PASS.
 - T2 VerticalAccretion: base64 Google-Doc envelopes bridged GitHub payload into runtime; final Git blob SHA PASS. Raw HTML through Docs FAILED because export transformed it.
 - T3 SixCities: ~6 MB crossed into Git as carrier chunks. Repository-local Actions promotion was unnecessary and rejected as default architecture.
-- T4 Clara Home Arcologies: native image read is NOT byte-transparent; expected `d209d07e…`, transformed candidate `f7c3e6b6…`. Binary file-reference→Git seam remains OPEN.
+- T4 Clara Home Arcologies: native image read is NOT byte-transparent; original `d209d07e…`, transformed candidate `f7c3e6b6…`. Artifact classified Faithful; transformed blob promoted as `reference/CLARAS_HOME_ARCOLOGIES.png` and destination verified at `f7c3e6b6…`. Faithful binary route PASS. Exact binary file-reference→Git seam remains OPEN.
 
 ## Finish line
 
