@@ -1,516 +1,84 @@
-# FUUTP™
+# FUUTP
 
-**Fuck Yo(u) UTP.**
+Model-operated exact artifact transport across tool seams.
 
-FUUTP is our small, homebrewed escape route for moving verified artifacts from ChatGPT into GitHub when the useful artifact exists on one side of the seam and the repository tools exist on the other.
+## Prime directive
 
-It is not an architecture, a framework, or a claim of novelty. We had a specific transport problem, looked for an existing solution, did not quickly find one that fit the seam available to us, and built the smallest thing that got our artifacts across it. We are keeping it because we expect to need the pipe again.
+Move the accepted artifact without changing it. Human readability is not a design constraint. Prefer compact operational truth for the next model.
 
-The name records the circumstances of its birth. We don't need to keep repeating the joke.
+## Invocation
 
-## FUUTP invocation contract
+The word `FUUTP` authorizes transport, not publication beyond the named destination. Infer direction from context, execute autonomously, verify identity, and do not ask the human to shuttle bytes until every documented exact route has failed at a named primitive.
 
-**The word `FUUTP` is enough to invoke this transport protocol when the surrounding task identifies a repository/artifact direction.**
+## Invariants
 
-A model encountering “use FUUTP”, “fetch it with FUUTP”, “push it through FUUTP”, “hop over to FUUTP”, or equivalent should:
+1. Artifact bytes are sovereign. Never parse/reserialize, minify, normalize, re-encode, recompress, redraw, or otherwise mutate them for transport.
+2. Establish expected identity before transport when possible. For Git destinations use Git blob SHA: `sha1("blob "+byteLength+"\\0"+bytes)`.
+3. Destination identity MUST equal expected identity before promotion.
+4. Once the exact final Git blob exists, bytes are finished moving. Rename/place/promote by Git tree operations only.
+5. Carriers are disposable transport state.
+6. Transport authority is separate from canonical publication authority.
+7. Report the narrowest failed primitive, not a vague platform failure.
+8. Preserve newly earned routes/failures here. Delete obsolete prose freely.
 
-1. Read this README from `bonoj/FUUTP` at its current default branch before inventing a transport workflow.
-2. Infer direction from the task:
-   - repository → working runtime = **pull**
-   - working/conversation artifact → repository = **push**
-3. Execute the proven route autonomously. Do not make the human manually shuttle files merely because the obvious high-level connector operation fails.
-4. Preserve artifact bytes/UTF-8 exactly. Transport is not permission to parse/reserialize, minify, reconstruct, refactor, or otherwise modify the artifact.
-5. Verify the destination against the source before declaring success.
-6. Treat publication/promotion authority separately from transport authority. FUUTP may move a candidate without making it canonical.
-7. Clean up disposable transport carriers after a successful transfer.
-8. If the currently documented route genuinely cannot run because a required tool is unavailable, diagnose the exact missing primitive. Do not silently substitute a lossy route.
+## Route selection
 
-For the currently proven large UTF-8 GitHub → sandbox case, **T2 below is the default fallback, not an experiment to rediscover**:
+### G→R UTF-8 (proven)
 
-```text
-GitHub metadata/path
-→ source Git blob SHA
-→ Git-data blob fetch
-→ exact UTF-8 payload in orchestration memory
-→ UTF-8 bytes
-→ conservative byte chunks
-→ base64 each chunk
-→ disposable Google Docs as carrier envelopes
-→ text/plain export creates runtime file references
-→ sandbox materialization
-→ strip carrier BOM/whitespace from base64 only
-→ base64 decode
-→ concatenate original bytes
-→ write working artifact
-→ compute Git blob SHA locally
-→ require equality with source SHA
-→ delete carrier Docs
-```
+GitHub path → blob SHA → Git-data blob fetch → exact UTF-8 → runtime/file surface → recreate Git blob identity → require SHA equality.
 
-**Why base64:** native Google Docs are not byte-transparent text carriers. Raw HTML transported through Docs failed identity because export transformed the text. Base64 restricts the carrier to a representation that survived the demonstrated Docs/export seam. Never “normalize” the decoded artifact itself.
+Large accepted specimen: `bonoj/VerticalAccretion/main/index.html`, source blob `3940ced8e70fe198ee08f99a63848cb31fe2e04d`.
 
-**Known acceptance specimen:** `bonoj/VerticalAccretion/main/index.html` reconstructed locally with Git blob SHA `3940ced8e70fe198ee08f99a63848cb31fe2e04d`, exactly matching its source blob.
+If direct runtime materialization is unavailable, proven T2 carrier:
+UTF-8 bytes → conservative chunks → base64 → disposable native Google Docs → text/plain export → runtime materialization → strip carrier BOM/whitespace from base64 only → decode → concatenate → verify Git blob SHA → delete Docs.
 
-If a future platform exposes a simpler exact-fidelity connector-memory → runtime-file primitive, prefer it after verifying identity and record the new evidence here. FUUTP is a transport protocol, not loyalty to a particular workaround.
+### R→G UTF-8 (proven)
 
-## How a model should use FUUTP
+Working text → exact payload → GitHub create_blob/create_file as appropriate → verify destination blob identity → tree/commit/ref promotion.
 
-**FUUTP is an external, bidirectional transport tool. Do not embed it in the artifact being transported.**
+Small specimen Foundry passed. Multi-megabyte SixCities demonstrated Git-resident carrier transport; carrier→final-blob assembly must still be identity-gated.
 
-When the user says to use, invoke, or "hop over to" FUUTP, treat this repository as operational instructions. Do not ask the user to manually upload/download/shuttle a repository artifact until the documented FUUTP routes have actually been attempted.
+### Conversation native binary → GitHub (OPEN)
 
-### Pull: GitHub → working artifact
+Current specimen:
+- source: conversation image `1681.png`
+- target: `bonoj/Crucible/reference/CLARAS_HOME_ARCOLOGIES.png`
+- source bytes: 706957
+- expected Git blob SHA: `d209d07ebbbaa7bbf64efe077c5fba5c62a01656`
 
-For a UTF-8 text artifact already in GitHub:
+Rejected route:
+conversation image → Files image read → returned image payload → GitHub create_blob(base64)
+produced blob `f7c3e6b671210cae43f46fba7fb3afc434452d35`, therefore the image-read representation is transformed and MUST NOT be promoted.
 
-```text
-repository + ref + path
-→ resolve Git blob SHA
-→ recover complete blob through GitHub Git-data API
-→ verify payload
-→ materialize/write recovered UTF-8 as the working file
-→ execute/inspect/edit locally as required
-```
+Required missing primitive:
+byte-transparent conversation-file reference/raw backing file → bytes/base64 or Git blob, without image decode/re-encode.
 
-Operational rules:
+Preferred probes, in order:
+A. Automatically mounted conversation backing file in execution container → read raw bytes → compute expected SHA → bridge raw bytes/base64 directly to GitHub if a tool can consume runtime output without model-visible bulk payload.
+B. Byte-transparent connector file reference → storage carrier → raw download/materialization → verify SHA → GitHub.
+C. Conservative binary chunks encoded as base64 carriers → exact reassembly → verify SHA → final Git blob.
+Do not use image rendering/vision/image-read output as a binary carrier.
 
-1. Try the ordinary repository file read when appropriate.
-2. If a large file returns metadata/identity but empty, truncated, or rejected content, **do not stop and do not ask the human to shuttle it**.
-3. Resolve the blob SHA and fetch the Git object through:
-   `/repos/{owner}/{repo}/git/blobs/{sha}`.
-4. Treat the returned blob content as the artifact payload. For UTF-8 HTML, the recovered string itself is the executable source; writing those characters as UTF-8 produces the working HTML artifact. A separate connector file reference is not conceptually required.
-5. Verify fidelity. Strongest demonstrated check: recreate a Git blob from the recovered UTF-8 and require the resulting SHA to equal the source blob SHA.
-6. Keep repository canonical state untouched unless the user separately authorizes publication/promotion.
+## Git promotion
 
-Do not confuse **payload acquisition** with **execution locality**. If one tool call recovers the complete string and another execution surface must receive it, bridge the payload directly using whatever code/file-writing surface is available in that runtime. Do not invent a requirement for Actions, releases, file-reference adapters, artifact splitting, reconstruction, minification, or human download/upload merely because a high-level file reader failed.
+Given verified final blob B and target path P:
+resolve target branch head/tree → create tree replacing/adding P with B (and deleting disposable carriers if applicable) → create commit → update ref → fetch P → require blob SHA == B.
 
-### Push: working artifact → GitHub
+Never upload B again merely to move or rename it.
 
-```text
-verified working artifact
-→ acquire exact payload
-→ establish expected Git blob identity
-→ create the final Git blob directly when possible
-   OR stage conservative Git-resident carriers when the seam requires them
-→ require final blob SHA == expected blob SHA
-→ promote that existing blob with create_tree → create_commit → update_ref
-→ verify target path resolves to the expected blob SHA
-→ remove disposable carriers during promotion when practical
-```
+## Failure discipline
 
-Preserve the accepted artifact rather than redesigning it for transport. Prefer the smallest route demonstrated to work for the payload.
+A failed identity gate is evidence, not an inconvenience. Keep source untouched, record source identity, candidate identity, exact seam, and next missing primitive. Never silently accept visual/textual equivalence where byte identity is required.
 
-**Critical invariant: once the verified final Git blob exists, artifact bytes are finished moving.** Publication, rename, relocation, rollback, and reuse are Git tree operations from that point onward. Never re-upload, re-encode, or reassemble an artifact merely to put an already-existing blob at a repository path.
+## Archaeology
 
-If a large push must use Git-resident carrier chunks because the direct payload → `create_blob` seam cannot accept the artifact in one call, those carriers are transport state, not application state. Assemble them into the final blob through the smallest available exact-fidelity operation, verify the resulting blob identity, then promote that blob directly.
+- UTP ancestor: model context carried complete text into Git create_blob.
+- T0 Foundry: bounded Files reads + in-call concatenation + GitHub write; text equality PASS.
+- T1 VerticalAccretion: Git-data blob endpoint recovered ~3 MB UTF-8; recreating source Git blob SHA PASS.
+- T2 VerticalAccretion: base64 Google-Doc envelopes bridged GitHub payload into runtime; final Git blob SHA PASS. Raw HTML through Docs FAILED because export transformed it.
+- T3 SixCities: ~6 MB crossed into Git as carrier chunks. Repository-local Actions promotion was unnecessary and rejected as default architecture.
+- T4 Clara Home Arcologies: native image read is NOT byte-transparent; expected `d209d07e…`, transformed candidate `f7c3e6b6…`. Binary file-reference→Git seam remains OPEN.
 
-**Do not install or depend on repository-local GitHub Actions merely to promote FUUTP carriers.** A specimen repository should not need CI machinery to finish transport. If the bytes are already in Git, solve the remaining problem with Git objects.
+## Finish line
 
-### Invocation finish line
-
-A successful FUUTP invocation should make this user workflow sufficient:
-
-```text
-"Work from <repository URL>. Use FUUTP."
-```
-
-The model should then recover the repository artifact, work from it, and return or publish the resulting artifact according to the user's authority—without requiring the human to manually carry the artifact across the seam.
-
-Think of FUUTP as a model-operated workshop tool. Transport limitations belong here, not in every sovereign lab.
-
-**Transport is FUUTP's problem. The artifact's job is to be the artifact.**
-
-## T2 result — operational GitHub → sandbox PASS
-
-Vertical Accretion closed the execution-locality seam.
-
-Source specimen:
-
-- `bonoj/VerticalAccretion/main/index.html`
-- source Git blob SHA: `3940ced8e70fe198ee08f99a63848cb31fe2e04d`
-- recovered UTF-8 bytes: 2,969,582
-
-Proven route:
-
-```text
-GitHub path
-→ resolve source blob SHA
-→ Git-data blob fetch
-→ exact UTF-8 string in tool orchestration
-→ UTF-8 encode
-→ split bytes into conservative transport chunks
-→ base64 each chunk
-→ temporary native Google Docs
-→ export each Doc as text/plain
-→ exported connector file references auto-materialize into /mnt/data
-→ locally remove transport whitespace/BOM
-→ base64 decode each chunk
-→ concatenate bytes in order
-→ write executable artifact
-→ calculate local Git blob SHA
-→ require exact equality with source blob SHA
-→ delete temporary Drive carriers
-```
-
-Observed result:
-
-```text
-local reconstructed Git blob SHA
-3940ced8e70fe198ee08f99a63848cb31fe2e04d
-
-source Git blob SHA
-3940ced8e70fe198ee08f99a63848cb31fe2e04d
-
-IDENTICAL = true
-```
-
-### Important failed carrier
-
-Do **not** carry raw HTML through a native Google Doc. The export introduced transformations beyond BOM/line-ending changes and failed Git-object identity.
-
-Base64 is the proven carrier because its alphabet survives the Docs text-export seam. The Docs are disposable transport envelopes, not artifact storage or semantic documents.
-
-### Operational instruction
-
-When direct GitHub/raw download into the execution sandbox is unavailable but Google Drive connector export can produce runtime file references, use the T2 base64 chunk bridge automatically. Do not ask the human to shuttle the artifact.
-
-Chunk sizing is an implementation detail; keep chunks comfortably below Google Docs/document-edit and tool-call limits. Multiple orchestration calls are acceptable. Always verify the final reconstructed bytes against the source Git blob SHA before treating the local artifact as authoritative.
-
-Temporary Drive carriers must be clearly named disposable and deleted after successful reconstruction.
-
-This makes FUUTP operationally bidirectional for the demonstrated UTF-8 artifact class:
-
-```text
-working file → GitHub
-GitHub → working file
-```
-
-Both directions have exact-fidelity evidence.
-
-## Why this repo exists
-
-World Lab began as a large self-contained artifact containing many laboratories. Publishing it exposed an awkward boundary: ChatGPT could possess and inspect the artifact, and the GitHub connector could construct Git objects, but there was no obvious direct conversation-file → Git-blob operation.
-
-That transport limitation is not an application-design constraint.
-
-As World Lab moves toward sovereign lab repositories, FUUTP gives us one place to preserve whatever transport machinery actually works instead of rediscovering it in every expedition.
-
-## The proven ancestor: UTP
-
-World Lab previously published a large self-contained HTML artifact through GitHub's Git-object API.
-
-The important archaeological correction is that this did **not** prove a dedicated conversation-file → Git-blob adapter. The working path was effectively:
-
-```text
-conversation file
-→ Files returned essentially the complete artifact as text
-→ that complete string was supplied to GitHub create_blob(content)
-→ create_tree
-→ create_commit
-→ update_ref
-```
-
-The Git-object portion was sound. The model/tool context itself served as the transport bridge between Files and `create_blob`.
-
-That distinction matters. A successful Git write does not prove that arbitrary conversation-file bytes can be handed directly to the GitHub connector.
-
-## Working principles
-
-**Transport once; promote by identity.**  
-Once FUUTP has produced and verified the destination Git blob, the payload phase is complete. Subsequent publication is tree surgery: point the requested path at that blob, commit the tree, and move the authorized ref.
-
-**Carriers are disposable transport state.**  
-A `.fuutp/` directory may temporarily hold conservative chunks when a tool seam cannot accept the complete payload. The presence of carriers means the bytes have crossed the expensive seam; do not restage them. Assemble, verify, promote, and clean them up.
-
-**No specimen-local CI requirement.**  
-GitHub Actions may be useful evidence in some unrelated workflow, but FUUTP must not require a target artifact repository to execute a temporary workflow simply to publish bytes already present in Git. The Six Cities attempt demonstrated that this adds an unnecessary asynchronous trigger/permissions/registration seam after transport has already succeeded.
-
-**Move the artifact; don't redesign it for the pipe.**  
-A verified standalone artifact should not be reconstructed, parsed/reserialized, minified, refactored, split, or otherwise changed merely to facilitate transport.
-
-**Executable evidence over imagined infrastructure.**  
-Add machinery only when a real publication attempt earns it. A workaround that succeeds is more useful than an elegant transport architecture we have not exercised.
-
-**Preserve archaeology.**  
-Record what actually worked, what failed, what payload crossed the seam, and what remained unverified. Do not rewrite history into a cleaner mechanism than the one that succeeded.
-
-**Verify when possible.**  
-Hashes, Git blob SHAs, fetched content, byte counts, or other evidence should be used when the available tools make meaningful verification possible. Be precise about whether a path is byte-faithful or merely text-faithful.
-
-**Stay portable.**  
-FUUTP should know as little as possible about World Lab, Foundry, HTML, GitHub Pages, or any particular application's architecture. Those are specimens and destinations, not FUUTP's ontology.
-
-## Transport contract
-
-Given a verified standalone artifact and a target GitHub repository:
-
-1. Acquire the complete artifact payload through the smallest available seam.
-2. Preserve the accepted artifact rather than rebuilding it.
-3. Establish the expected Git blob SHA whenever exact identity is available.
-4. Create the final blob directly when possible. If the seam requires `.fuutp/` carriers, stage them once and treat them as already-transported bytes.
-5. Assemble carriers into one candidate blob without changing artifact bytes.
-6. **Require candidate blob SHA == expected blob SHA before promotion.**
-7. Promote by Git metadata: `existing blob SHA → create_tree → create_commit → update_ref`.
-8. Verify the requested target path resolves to the expected blob SHA.
-9. Remove disposable carriers and obsolete transport machinery during the promotion commit when practical.
-10. Record newly demonstrated capability, limit, or failure here.
-
-If step 5 cannot be executed with the currently available primitives, stop at that exact missing primitive. Do not restart transport, ask the human to shuttle the artifact, or add repository-local CI as an implicit substitute.
-
-FUUTP may accumulate multiple routes. They do not need to pretend to be one universal protocol.
-
-## T0 experiment — Foundry
-
-The first deliberate FUUTP specimen is the extracted standalone Foundry laboratory, approximately 236 KB—dramatically smaller than the roughly 7 MB monolithic World Lab artifact from which the publication problem became obvious.
-
-The intended experiment is deliberately boring:
-
-```text
-verified Foundry standalone
-→ recover complete payload
-→ GitHub
-→ main/index.html
-→ verify
-```
-
-If that succeeds, we document the observed envelope. We do **not** infer a universal size limit from one successful artifact.
-
-If it fails, the failure becomes evidence and FUUTP earns its next piece of machinery.
-
-## Next experiment — large push without model-visible byte pressure
-
-The next FUUTP investigation should target the failure mode that actually hurt us: **the model stalls while transporting or accumulating a multi-megabyte artifact**, even when GitHub itself is capable of storing the object.
-
-A small World Lab Vestibule publication provided a useful but deliberately limited data point. A ~43 KB UTF-8 HTML artifact was moved through:
-
-```text
-container artifact
-→ Files/Library snapshot
-→ Files read
-→ complete text assembled inside tool orchestration
-→ GitHub contents update
-→ verify destination blob
-```
-
-That path completed cleanly and did not require emitting the artifact into conversational output. It does **not** prove that the same route remains operational at multi-megabyte scale. The final GitHub write still consumed the complete UTF-8 artifact as one `content` argument. At ~43 KB that is trivial; at ~3–7 MB it may reproduce the historical stall.
-
-### Question to answer
-
-Can a large accepted artifact travel from file-backed storage to a verified Git blob **without the model having to ingest, retain, or re-emit the bulk payload through its conversational working context, and without stalling before the write completes?**
-
-This is a transport/runtime question, not a Git size-limit question.
-
-### Proposed deterministic probe
-
-Use a disposable repository/path and inert UTF-8 specimens whose exact bytes are known. Exercise increasing payload sizes rather than beginning with a valuable accepted artifact:
-
-```text
-~1 MB
-→ ~4 MB
-→ ~8 MB
-```
-
-For each specimen:
-
-1. Begin with a real file-backed artifact, not text pasted into the conversation.
-2. Establish expected byte count and Git blob SHA before transport.
-3. Acquire/read the payload only inside tool orchestration or another non-conversational transport surface.
-4. If bounded reads are required, concatenate them inside that same execution/orchestration surface. Do not emit chunks to the model and do not accumulate them across conversational turns.
-5. Send the complete candidate to GitHub using the smallest available write primitive.
-6. Emit only compact status metadata back to the model: attempted size, success/failure, destination blob SHA, expected blob SHA, and where the operation stalled if it failed.
-7. Require destination blob SHA == expected blob SHA before calling the probe a pass.
-8. Delete disposable specimens/carriers after the experiment.
-
-### Success condition
-
-The useful threshold is not merely “GitHub accepted an 8 MB file.” The experiment passes only if the **entire operation completes without model stall and without bulk artifact bytes entering conversational output/context**, while preserving exact Git-object identity.
-
-If ~8 MB succeeds, record the demonstrated envelope here and use that direct file-backed/orchestrated route for large UTF-8 pushes until contrary evidence appears.
-
-### Failure diagnosis
-
-If a size step stalls or is rejected, record the narrowest observed seam:
-
-```text
-file-backed source
-→ Files/read limit?
-→ in-call concatenation/runtime memory limit?
-→ tool argument serialization limit?
-→ GitHub connector wrapper limit?
-→ GitHub API limit?
-```
-
-Do not summarize every large-payload failure as “GitHub cannot take the file.” Identify the component that actually failed.
-
-If the direct route fails, the next experiment should seek a true **file/reference/stream → Git blob** primitive where the GitHub side consumes a file handle or connector-local reference rather than a model-constructed content string. If no such primitive exists, return to FUUTP's verified carrier strategy and solve the remaining carrier → exact blob assembly seam without making the human shuttle bytes.
-
-### Preserve the artifact
-
-Do not use this experiment as permission to split application architecture, minify, parse/reserialize, reconstruct, or otherwise mutate an accepted artifact. Chunking is allowed only as disposable transport representation, with exact final Git blob identity as the gate.
-
-## Non-goals
-
-FUUTP does not need to become a package manager, deployment platform, artifact format, World Lab runtime, universal Git abstraction, or respectable piece of enterprise middleware.
-
-It just needs to get the artifact through the seam without making the artifact become something else.
-
-
-## T0 result — PASS
-
-Foundry crossed the seam successfully.
-
-Observed route:
-
-```text
-Files read: foundry_standalone.html
-→ three contiguous text windows (lines 1–1000, 1001–2000, 2001–2765)
-→ concatenate in-order inside one tool-orchestration call
-→ GitHub contents write to bonoj/Foundry/main/index.html
-→ fetch published index.html
-→ compare complete source and published strings
-```
-
-Observed payload:
-
-- 2,765 source lines
-- 235,343 JavaScript string characters
-- source and fetched GitHub content had identical character counts
-- complete source/published string comparison returned true
-- an independent FNV-style comparison over the JavaScript strings also matched: `48962312`
-- published Git blob SHA: `6a0fe9c04fae292bd86e25fd3231749fe42c63e1`
-- publication commit: `63db4f21d99293d3f1f994994009089f46ffe7ab`
-
-### What T0 actually proved
-
-For this UTF-8 HTML specimen, FUUTP can bridge a conversation file to GitHub without emitting the artifact through model-visible output. Files can return bounded contiguous text windows inside a tool-orchestration call; those windows can be concatenated there and supplied directly to the GitHub write operation.
-
-The complete UTF-8 text recovered from GitHub was identical to the complete UTF-8 text recovered from Files.
-
-This is **text-faithful transport evidence**. It is not yet a general byte-faithful claim: the experiment did not independently hash the original uploaded byte stream before Files decoded it as text. Binary artifacts, encoding edge cases, larger payloads, and connector/tool-call limits remain unproven.
-
-### Useful discovery
-
-The T0 route did not need the lower-level Git-object sequence. GitHub's contents write was sufficient to initialize the empty Foundry repository and create `main/index.html`.
-
-That makes the smallest currently proven FUUTP path:
-
-```text
-Files bounded reads
-→ in-call concatenation
-→ GitHub create_file
-→ GitHub fetch_file
-→ full-text equality check
-```
-
-Keep the Git-object route as an earned historical fallback, not mandatory ceremony.
-
-
-## T1 experiment — inverse transport from GitHub
-
-Vertical Accretion exposed the inverse seam: a model could inspect repository metadata but initially could not recover its accepted ~3 MB executable through the obvious repository-file readers.
-
-Specimen:
-
-- repository: `bonoj/VerticalAccretion`
-- path: `main/index.html`
-- Git blob SHA: `3940ced8e70fe198ee08f99a63848cb31fe2e04d`
-
-### T1 result — PAYLOAD PASS
-
-The obvious routes failed:
-
-```text
-GitHub fetch_file(index.html)
-→ blob identity returned
-→ content empty
-
-GitHub fetch_file(index.html, bounded line range)
-→ blob identity returned
-→ content empty
-
-GitHub raw.githubusercontent.com fetch
-→ rejected as too large or unsupported
-```
-
-The Git-data route succeeded:
-
-```text
-known repository path
-→ fetch_file to obtain blob SHA
-→ GitHub Git blob endpoint: /repos/{owner}/{repo}/git/blobs/{sha}
-→ complete UTF-8 text recovered inside one tool-orchestration call
-```
-
-Observed payload:
-
-- 2,969,176 JavaScript string characters
-- starts with `<!doctype html>`
-- ends with `</body></html>`
-- FNV-1a 32-bit over the recovered JavaScript string: `1239264b`
-
-This establishes a useful inverse acquisition route for a large UTF-8 Git blob even when the higher-level file readers refuse or truncate the payload.
-
-### What T1 proves
-
-T1 proves **GitHub → complete model/tool-orchestration payload** for this ~3 MB UTF-8 blob. The recovered string was subsequently shown to recreate the identical Git object.
-
-For an HTML artifact, that complete UTF-8 payload is already the executable source. Do not mistake the absence of a connector-specific file reference for absence of the artifact. When execution requires a filesystem path, write/materialize the recovered UTF-8 through the available execution/file-writing surface.
-
-### Current inverse route
-
-When a large UTF-8 repository file is needed:
-
-1. Resolve its Git blob SHA with the normal repository metadata/file operation.
-2. Fetch `/repos/{owner}/{repo}/git/blobs/{sha}` through the GitHub connector.
-3. Verify character count and an in-call checksum when useful.
-4. If the next operation can consume the recovered string directly, continue without surfacing it through model output.
-5. If execution requires a local/container file, write the recovered UTF-8 as that file through the available execution surface. Do not ask the human to shuttle the artifact merely because the GitHub connector itself returned text rather than a file reference.
-
-Do not install transport workflows into specimen repositories merely to compensate for this seam. Transport remains FUUTP's problem.
-
-### T1 fidelity upgrade — Git-object-identical PASS
-
-The recovered 2,969,176-character Vertical Accretion payload was supplied directly to GitHub `create_blob(content, encoding=utf-8)` in the FUUTP repository. GitHub returned:
-
-```text
-3940ced8e70fe198ee08f99a63848cb31fe2e04d
-```
-
-That is exactly the source blob SHA from `bonoj/VerticalAccretion/main/index.html`.
-
-For this UTF-8 specimen, inverse acquisition is therefore stronger than character-count or auxiliary-checksum evidence: the recovered string recreates the identical Git object. T1 acquisition is **text-faithful at Git-object identity**.
-
-The payload-fidelity question is closed for this specimen. Execution locality is an adapter concern: the recovered UTF-8 is the artifact, and a runtime that needs a path should write those exact characters to the working file. Do not elevate a missing connector-specific `file reference` into a transport requirement.
-
-
-## T3 evidence — Six Cities carrier promotion correction
-
-Six Cities exposed a distinction FUUTP previously left too implicit.
-
-The approximately 6 MB standalone artifact crossed the difficult seam successfully as eight Git-resident carrier chunks under `.fuutp/`. The intended complete artifact identity was recorded as:
-
-```text
-2fc171f82f0726372d61c9f7d8994779a117a8d5
-```
-
-A temporary GitHub Actions workflow was then added to concatenate the carriers, verify that SHA, commit `index.html`, and remove the carriers. Changing the workflow trigger and opening an issue still did not produce the publication commit.
-
-That failure does **not** mean transport failed. The expensive fact was already true: the artifact bytes were present in Git.
-
-The corrected interpretation is:
-
-```text
-working artifact
-→ .fuutp carriers in Git                 TRANSPORT SUCCEEDED
-→ exact assembly
-→ expected final blob SHA                IDENTITY GATE
-→ tree points index.html at final blob   PROMOTION
-→ commit + ref update
-→ carriers removed                       CLEANUP
-```
-
-The repository-local Actions step was an unnecessary second control plane between transport and promotion. It is now a rejected default route.
-
-**Acceptance test for the corrected protocol:** return to `bonoj/SixCities` without restaging the artifact, consume the already-present `.fuutp/part-*` carriers, produce the expected blob `2fc171f82f0726372d61c9f7d8994779a117a8d5`, promote it to `main/index.html`, verify the target blob identity, and clean up transport-only state.
-
-Until that acceptance test passes, carrier → blob assembly through the available model/GitHub tool seam remains the one unproven primitive. FUUTP should say so rather than disguising it behind CI.
+FUUTP succeeds only when the requested destination resolves to the expected artifact identity. Anything less is a diagnosed crossing, not a completed transport.
